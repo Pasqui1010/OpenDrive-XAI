@@ -5,4 +5,8 @@
 black==24.4.2
 flake8==7.0.0
 isort==5.13.2
-pytest==8.2.0 
+pytest==8.2.0
+pydantic==2.7.1
+Pillow==10.3.0
+torch==2.3.0
+torchvision==0.18.0 
