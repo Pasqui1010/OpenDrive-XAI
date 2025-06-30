@@ -1,0 +1,47 @@
+# Python
+__pycache__/
+*.py[cod]
+*.so
+*.egg-info/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# ROS/ROS2 build artifacts
+build/
+devel/
+install/
+log/
+	
+# CMake & colcon
+CMakeFiles/
+CMakeCache.txt
+catkin_*_
+
+# VSCode & IDEs
+.vscode/
+.idea/
+*.swp
+
+# Data & artifacts
+*.bag
+*.hdf5
+*.npy
+*.pt
+*.onnx
+*.log
+
+# Docker
+**/docker-cache/
+
+# Environment
+.env
+.env.*
+
+# Test & coverage
+.coverage
+htmlcov/
+
+# Misc
+.DS_Store
+Thumbs.db 
