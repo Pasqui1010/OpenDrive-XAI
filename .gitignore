@@ -44,4 +44,7 @@ htmlcov/
 
 # Misc
 .DS_Store
-Thumbs.db 
+Thumbs.db
+
+# Virtual environments
+.venv/
