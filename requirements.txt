@@ -1,3 +1,6 @@
+# PyTorch CPU wheels
+--extra-index-url https://download.pytorch.org/whl/cpu
+
 # Core runtime dependencies (placeholder)
 # Add torch==<version> etc. when perception code lands
 
@@ -8,7 +11,7 @@ isort==5.13.2
 pytest==8.2.0
 pydantic==2.7.1
 Pillow==11.2.1
-torch==2.3.0
-torchvision==0.18.0
+torch==2.7.1+cpu
+torchvision==0.20.1+cpu
 imageio==2.34.0
 matplotlib==3.8.4 
