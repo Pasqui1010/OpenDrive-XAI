@@ -1,5 +1,7 @@
 # OpenDrive-XAI
 
+![CI](https://github.com/Pasqui1010/opendrive-xai/actions/workflows/ci.yml/badge.svg)
+
 Robust, explainable end-to-end autonomous driving stack built for real-time research & education.
 
 **License  Apache-2.0**
@@ -26,7 +28,7 @@ docker compose up --build quickstart
 # open http://localhost:8888 for real-time BEV & XAI overlays
 ```
 
-> Don't have Docker? See docs/quickstart_no_docker.md for a small-model CPU demo in Google Colab.
+See also [docs/quickstart_no_docker.md](docs/quickstart_no_docker.md) for a CPU-only setup.
 
 ## 3. Repository Layout (TL;DR)
 

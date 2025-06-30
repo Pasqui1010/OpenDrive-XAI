@@ -1,0 +1,8 @@
+# Core runtime dependencies (placeholder)
+# Add torch==<version> etc. when perception code lands
+
+# Dev / tooling
+black==24.4.2
+flake8==7.0.0
+isort==5.13.2
+pytest==8.2.0 
