@@ -9,9 +9,13 @@ black==24.4.2
 flake8==7.0.0
 isort==5.13.2
 pytest==8.2.0
-pydantic==2.7.1
+pydantic==2.7.1; python_version < "3.13"  # PyPI wheels not yet available for 3.13 on Windows
 Pillow==11.2.1
 torch==2.7.1+cpu
-torchvision==0.20.1+cpu
+torchvision==0.22.1+cpu
 imageio==2.34.0
-matplotlib==3.8.4 
+matplotlib==3.10.3  # cp313 wheels available
+
+# Temporary workaround for Python 3.13 users –
+# pydantic-core wheels are missing, so either downgrade Python or install extra build tools.
+# Once upstream publishes cp313 wheels we'll remove this guard. 

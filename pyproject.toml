@@ -6,6 +6,6 @@ build-backend = "setuptools.build_meta"
 name = "opendrive-xai"
 version = "0.0.1"
 description = "OpenDrive-XAI research stack"
-authors = [{name='Pasqui', email=''}]
+authors = [{name = "Pasqui", email = "pasqui@example.com"}]
 readme = "README.md"
 requires-python = ">=3.9" 
