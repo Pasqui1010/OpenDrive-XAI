@@ -6,4 +6,4 @@ try:
     from .carla_env import CarlaEnvironment, CameraConfig, VehicleState, SensorData
 except ImportError:
     # CARLA not available
-    pass 
+    pass

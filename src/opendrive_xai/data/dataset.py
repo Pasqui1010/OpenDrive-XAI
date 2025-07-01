@@ -55,4 +55,4 @@ class CarlaSampleDataset:
     def __iter__(self) -> Iterator[Tuple[Image.Image, List[float]]]:  # type: ignore[misc]
         for timestamp, pose in self._poses:
             img_path = self.images_dir / f"{timestamp}.png"
-            yield Image.open(img_path).convert("RGB"), pose 
+            yield Image.open(img_path).convert("RGB"), pose

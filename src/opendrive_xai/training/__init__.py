@@ -2,4 +2,4 @@
 
 __all__ = ["E2ETrainer", "TrainingConfig", "LossComponents", "MetricsLogger"]
 
-from .trainer import E2ETrainer, TrainingConfig, LossComponents, MetricsLogger 
+from .trainer import E2ETrainer, TrainingConfig, LossComponents, MetricsLogger

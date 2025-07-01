@@ -12,7 +12,9 @@ class Config(BaseModel):
     """Project-wide configuration (loaded at runtime)."""
 
     # Paths
-    project_root: Path = Field(default_factory=lambda: Path(__file__).resolve().parents[2])
+    project_root: Path = Field(
+        default_factory=lambda: Path(__file__).resolve().parents[2]
+    )
 
     # Ensure that a default data directory always exists so that downstream
     # components and unit-tests do not need to guard against its absence.
@@ -43,4 +45,4 @@ class Config(BaseModel):
         return val.upper()
 
     # Pydantic v2 configuration
-    model_config = ConfigDict(arbitrary_types_allowed=True, frozen=True) 
+    model_config = ConfigDict(arbitrary_types_allowed=True, frozen=True)

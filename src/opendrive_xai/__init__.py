@@ -14,4 +14,4 @@ __version__ = "0.0.1"
 
 # Convenience: load default config at import time
 DEFAULT_CFG = Config()
-DATA_DIR = Path(__file__).resolve().parents[2] / "data" 
+DATA_DIR = Path(__file__).resolve().parents[2] / "data"

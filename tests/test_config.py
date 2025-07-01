@@ -9,4 +9,4 @@ def test_config_defaults():
 
 def test_logger():
     logger = get_logger("test")
-    logger.info("logger works") 
+    logger.info("logger works")
