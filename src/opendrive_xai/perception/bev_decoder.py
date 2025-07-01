@@ -20,7 +20,9 @@ class BEVLightDecoder(nn.Module):
         self.act = nn.ReLU(inplace=True)
         self.conv2 = nn.Conv2d(in_channels // 2, num_classes, kernel_size=1)
 
-    def forward(self, x: torch.Tensor, output_size: tuple[int, int] | None = (200, 200)) -> torch.Tensor:  # noqa: D401,E501
+    def forward(
+        self, x: torch.Tensor, output_size: tuple[int, int] | None = (200, 200)
+    ) -> torch.Tensor:  # noqa: D401,E501
         """Return logits of shape ``[B, num_classes, H, W]``.
 
         Args:
@@ -31,6 +33,8 @@ class BEVLightDecoder(nn.Module):
         """
         x = self.act(self.conv1(x))
         x = self.conv2(x)
-        if output_size is not None and (x.shape[-2] != output_size[0] or x.shape[-1] != output_size[1]):
+        if output_size is not None and (
+            x.shape[-2] != output_size[0] or x.shape[-1] != output_size[1]
+        ):
             x = F.interpolate(x, size=output_size, mode="bilinear", align_corners=False)
-        return x 
+        return x

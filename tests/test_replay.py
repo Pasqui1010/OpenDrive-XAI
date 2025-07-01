@@ -22,4 +22,4 @@ def _make_stub_dataset(tmp: Path):
 def test_replay(tmp_path: Path, out_name: str):
     _make_stub_dataset(tmp_path)
     replay.run(tmp_path, tmp_path / out_name)
-    assert (tmp_path / out_name).exists() 
+    assert (tmp_path / out_name).exists()

@@ -54,7 +54,9 @@ def _vis_frame(img, bev_tensor: torch.Tensor) -> np.ndarray:  # noqa: D401
     return arr
 
 
-def run(dataset_root: Path | str | None = None, out_path: Path | str = "replay.gif") -> None:  # noqa: D401
+def run(
+    dataset_root: Path | str | None = None, out_path: Path | str = "replay.gif"
+) -> None:  # noqa: D401
     ds = CarlaSampleDataset(root=dataset_root)
     model = TinyBEVEncoder(bev_channels=64).eval()
     torch.set_grad_enabled(False)
@@ -70,8 +72,12 @@ def run(dataset_root: Path | str | None = None, out_path: Path | str = "replay.g
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Run encoder on sample log and export GIF")
-    parser.add_argument("--root", type=str, default=None, help="Dataset root (default: data/sample)")
+    parser = argparse.ArgumentParser(
+        description="Run encoder on sample log and export GIF"
+    )
+    parser.add_argument(
+        "--root", type=str, default=None, help="Dataset root (default: data/sample)"
+    )
     parser.add_argument("--out", type=str, default="replay.gif", help="Output GIF path")
     args = parser.parse_args()
-    run(args.root, args.out) 
+    run(args.root, args.out)

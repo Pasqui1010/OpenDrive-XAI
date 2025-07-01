@@ -25,4 +25,4 @@ def get_logger(name: Optional[str] = None, level: str = "INFO") -> logging.Logge
         logger.addHandler(handler)
 
     logger.setLevel(level.upper())
-    return logger 
+    return logger
