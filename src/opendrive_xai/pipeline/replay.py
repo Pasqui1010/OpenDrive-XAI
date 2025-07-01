@@ -4,7 +4,7 @@ Usage (after downloading sample data):
 
 ```bash
 python -m opendrive_xai.pipeline.replay --out demo.gif
-```
+```pyt
 """
 
 from __future__ import annotations
