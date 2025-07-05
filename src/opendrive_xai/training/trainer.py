@@ -133,44 +133,18 @@ class AutonomousDrivingDataset(Dataset):
 
     def _load_data_index(self) -> List[Dict]:
         """Load dataset index with camera images and trajectories."""
-        # Placeholder implementation - should load actual dataset
-        # This would typically load from preprocessed CARLA data
-        samples = []
-
-        # For now, create dummy data structure
-        for i in range(1000):  # Dummy size
-            sample = {
-                "episode_id": f"episode_{i // 100}",
-                "frame_id": i % 100,
-                "camera_files": {
-                    "front": self.data_dir
-                    / f"episode_{i // 100}"
-                    / "frames"
-                    / f"{i:06d}_front.png",
-                    "rear": self.data_dir
-                    / f"episode_{i // 100}"
-                    / "frames"
-                    / f"{i:06d}_rear.png",
-                    # Add other cameras...
-                },
-                "trajectory": np.random.randn(10, 2).astype(
-                    np.float32
-                ),  # Dummy trajectory
-                "vehicle_state": {
-                    "location": np.random.randn(3).astype(np.float32),
-                    "rotation": np.random.randn(3).astype(np.float32),
-                    "velocity": np.random.randn(3).astype(np.float32),
-                },
-            }
-            samples.append(sample)
-
-        return samples
+        # TODO: Implement actual data loading from CARLA or preprocessed dataset
+        raise NotImplementedError(
+            "AutonomousDrivingDataset._load_data_index is not implemented. "
+            "Please implement data loading from your CARLA dataset or preprocessed files. "
+            "Refer to the project documentation for details."
+        )
 
     def __len__(self) -> int:
         return len(self.data_samples)
 
-    def __getitem__(self, idx: int) -> Dict[str, torch.Tensor]:
-        """Get training sample."""
+    def __getitem__(self, idx: int) -> dict:
+        """Get training sample. Returns a dict with tensors and metadata."""
         sample = self.data_samples[idx]
 
         # Load camera images (dummy implementation)
@@ -327,46 +301,37 @@ class E2ETrainer:
         if not self.config.adversarial_training:
             return torch.tensor(0.0, device=self.device)
 
-        multi_camera_input = batch["multi_camera_input"].clone().detach()
-        camera_poses = batch["camera_poses"]
-        targets = batch["trajectory"]
+        multi_camera_input = batch["multi_camera_input"].clone().detach().to(self.device)
+        camera_poses = batch["camera_poses"].to(self.device)
+        targets = batch["trajectory"].to(self.device)
 
         # Initialize perturbation
         delta = torch.zeros_like(multi_camera_input, requires_grad=True)
 
         # PGD attack
         for _ in range(self.config.adversarial_steps):
-            # Forward pass
             adv_input = multi_camera_input + delta
             adv_predictions, adv_intermediates = self.model(adv_input, camera_poses)
+            loss_components = self.compute_loss(adv_predictions, targets, adv_intermediates)
+            adv_loss = loss_components.total_loss
 
-            # Compute loss
-            loss_components = self.compute_loss(
-                adv_predictions, targets, adv_intermediates
-            )
-            adv_loss = torch.tensor(
-                loss_components.total_loss, device=self.device, requires_grad=True
-            )
+            adv_loss_tensor = torch.tensor(adv_loss, device=self.device, requires_grad=True)
+            adv_loss_tensor.backward()
 
-            # Backward pass
-            adv_loss.backward()
+            # Only update if grad is not None
+            if delta.grad is not None:
+                grad = delta.grad.detach()
+                delta.data = delta.data + self.config.adversarial_alpha * grad.sign()
+                delta.data = torch.clamp(
+                    delta.data,
+                    -self.config.adversarial_epsilon,
+                    self.config.adversarial_epsilon,
+                )
+                delta.grad.zero_()
 
-            # Update perturbation
-            grad = delta.grad.detach()
-            delta.data = delta.data + self.config.adversarial_alpha * grad.sign()
-            delta.data = torch.clamp(
-                delta.data,
-                -self.config.adversarial_epsilon,
-                self.config.adversarial_epsilon,
-            )
-            delta.grad.zero_()
-
-        # Final adversarial forward pass
         adv_input = multi_camera_input + delta.detach()
         adv_predictions, adv_intermediates = self.model(adv_input, camera_poses)
-        adv_loss_components = self.compute_loss(
-            adv_predictions, targets, adv_intermediates
-        )
+        adv_loss_components = self.compute_loss(adv_predictions, targets, adv_intermediates)
 
         return torch.tensor(adv_loss_components.total_loss, device=self.device)
 

@@ -1,21 +1,43 @@
 # PyTorch CPU wheels
 --extra-index-url https://download.pytorch.org/whl/cpu
 
-# Core runtime dependencies (placeholder)
-# Add torch==<version> etc. when perception code lands
+# Core runtime dependencies
+# Use torch==2.7.1+cpu for CPU-only, or torch==2.7.1 for GPU (user can override)
+torch==2.7.1+cpu; platform_system != "Linux"  # Default to CPU on Windows/Mac
+torchvision==0.22.1+cpu; platform_system != "Linux"
+torch==2.7.1; platform_system == "Linux"
+torchvision==0.22.1; platform_system == "Linux"
+
+# CARLA (optional - install from CARLA release if needed)
+# Note: CARLA Python API must be installed separately from CARLA simulator
+# See: https://carla.readthedocs.io/en/latest/start_quickstart/
+# carla==0.9.5  # Uncomment if you have CARLA installed
+
+# ML/vision
+Pillow==11.2.1
+imageio==2.34.0
+matplotlib==3.10.3
+opencv-python==4.9.0.80
+
+# Data/config
+pydantic==2.7.1
+
+# Experiment tracking
+wandb==0.16.6
+
+# Mechatronics and vehicle control
+python-can==4.3.1  # CAN bus communication
+pyserial==3.5  # Serial communication for sensors
+numpy==1.26.4  # Numerical computing
+scipy==1.13.1  # Scientific computing
+
+# ROS/ROS2 (optional - for advanced robotics integration)
+# ros2-ros-base; platform_system == "Linux"  # Uncomment if using ROS2
 
 # Dev / tooling
 black==24.4.2
 flake8==7.0.0
 isort==5.13.2
 pytest==8.2.0
-pydantic==2.7.1; python_version < "3.13"  # PyPI wheels not yet available for 3.13 on Windows
-Pillow==11.2.1
-torch==2.7.1+cpu
-torchvision==0.22.1+cpu
-imageio==2.34.0
-matplotlib==3.10.3  # cp313 wheels available
-
-# Temporary workaround for Python 3.13 users –
-# pydantic-core wheels are missing, so either downgrade Python or install extra build tools.
-# Once upstream publishes cp313 wheels we'll remove this guard. 
+pytest-mock==3.14.0
+pytest-cov==5.0.0 

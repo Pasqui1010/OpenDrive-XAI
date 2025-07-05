@@ -1,5 +1,8 @@
 # CPU-only Quick-Start (no Docker)
 
+> **⚠️ Python 3.12 Required:**
+> This project currently requires **Python 3.12** due to dependency compatibility (notably pydantic and CARLA). Python 3.13+ is not yet supported. Please ensure you are using Python 3.12 when setting up your environment.
+
 > Goal: run the lane-keeping demo on any machine without GPU & without installing ROS.
 
 1. Install Python 3.11+ and Git.

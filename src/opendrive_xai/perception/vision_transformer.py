@@ -139,30 +139,59 @@ class TransformerEncoderLayer(nn.Module):
 
 
 class BEVProjection(nn.Module):
-    """Project 2D camera features to unified 3D Bird's-Eye-View space."""
+    """Attention-driven BEV projection using learned spatial relationships.
+    
+    This innovative approach replaces traditional geometric projection with
+    learnable cross-attention mechanisms that can adapt to different camera
+    setups and learn complex spatial relationships.
+    """
 
     def __init__(
         self,
         feature_dim: int,
         bev_size: Tuple[int, int] = (200, 200),
         bev_channels: int = 256,
+        num_attention_heads: int = 8,
+        dropout: float = 0.1,
     ):
         super().__init__()
         self.feature_dim = feature_dim
         self.bev_size = bev_size
         self.bev_channels = bev_channels
+        self.num_attention_heads = num_attention_heads
 
-        # Learnable camera-to-BEV projection matrices
-        self.projection_mlp = nn.Sequential(
-            nn.Linear(feature_dim, feature_dim * 2),
+        # Learnable BEV grid embeddings
+        self.bev_embeddings = nn.Parameter(
+            torch.randn(bev_size[0] * bev_size[1], bev_channels) * 0.02
+        )
+        
+        # Cross-attention for camera-to-BEV projection
+        self.cross_attention = MultiHeadAttention(
+            d_model=bev_channels,  # Use bev_channels as d_model
+            num_heads=num_attention_heads,
+            dropout=dropout
+        )
+        
+        # Feature projection layers - ensure output matches bev_channels
+        self.camera_projection = nn.Sequential(
+            nn.Linear(feature_dim, bev_channels),
             nn.ReLU(),
-            nn.Linear(feature_dim * 2, bev_channels),
+            nn.Dropout(dropout),
+            nn.Linear(bev_channels, bev_channels),
         )
-
-        # Spatial embedding for BEV coordinates
-        self.bev_embedding = nn.Parameter(
-            torch.randn(bev_channels, bev_size[0], bev_size[1]) * 0.02
+        
+        # Output projection
+        self.output_projection = nn.Sequential(
+            nn.Linear(bev_channels, bev_channels),
+            nn.ReLU(),
+            nn.Dropout(dropout),
+            nn.Linear(bev_channels, bev_channels),
         )
+        
+        # Layer normalization
+        self.norm1 = nn.LayerNorm(bev_channels)
+        self.norm2 = nn.LayerNorm(bev_channels)
+        self.dropout = nn.Dropout(dropout)
 
     def forward(
         self, camera_features: List[torch.Tensor], camera_poses: torch.Tensor
@@ -176,31 +205,49 @@ class BEVProjection(nn.Module):
             bev_features: [B, bev_channels, H, W] unified BEV representation
         """
         batch_size = camera_features[0].size(0)
-
-        # Aggregate features from all cameras
-        aggregated_features = []
+        num_cameras = len(camera_features)
+        
+        # Initialize BEV grid as query
+        bev_queries = self.bev_embeddings.unsqueeze(0).expand(
+            batch_size, -1, -1
+        )  # [B, H*W, bev_channels]
+        
+        # Process each camera's features
+        camera_keys_values = []
         for i, cam_feat in enumerate(camera_features):
             # Project camera features to BEV space
-            projected = self.projection_mlp(cam_feat)  # [B, seq_len, bev_channels]
-
-            # Pool over sequence dimension (simplified - could use attention)
-            pooled = projected.mean(dim=1)  # [B, bev_channels]
-            aggregated_features.append(pooled)
-
-        # Stack and process multi-camera features
-        multi_cam_features = torch.stack(
-            aggregated_features, dim=1
-        )  # [B, num_cameras, bev_channels]
-
-        # Combine features (simplified - actual implementation would use geometric projection)
-        combined = multi_cam_features.mean(dim=1)  # [B, bev_channels]
-
+            projected = self.camera_projection(cam_feat)  # [B, seq_len, bev_channels]
+            camera_keys_values.append(projected)
+        
+        # Concatenate all camera features
+        all_camera_features = torch.cat(camera_keys_values, dim=1)  # [B, total_seq_len, bev_channels]
+        
+        # Apply cross-attention: BEV queries attend to camera keys/values
+        attended_bev, attention_weights = self.cross_attention(
+            query=bev_queries,
+            key=all_camera_features,
+            value=all_camera_features
+        )
+        
+        # Residual connection and normalization
+        bev_queries = self.norm1(bev_queries + self.dropout(attended_bev))
+        
+        # Final projection
+        output_bev = self.output_projection(bev_queries)
+        bev_queries = self.norm2(bev_queries + self.dropout(output_bev))
+        
         # Reshape to spatial BEV map
-        bev_features = combined.unsqueeze(-1).unsqueeze(
-            -1
-        ) * self.bev_embedding.unsqueeze(0)
-
+        bev_features = bev_queries.view(
+            batch_size, self.bev_size[0], self.bev_size[1], self.bev_channels
+        ).permute(0, 3, 1, 2)  # [B, bev_channels, H, W]
+        
         return bev_features
+
+    def get_attention_weights(self) -> Optional[torch.Tensor]:
+        """Get attention weights for visualization and analysis."""
+        if hasattr(self.cross_attention, 'attention_weights'):
+            return self.cross_attention.attention_weights
+        return None
 
 
 class TemporalHead(nn.Module):
@@ -262,6 +309,9 @@ class MultiCameraBEVTransformer(nn.Module):
         self.patch_size = patch_size
         self.img_size = img_size
         self.d_model = d_model
+        self.bev_channels = bev_channels
+        self.num_waypoints = num_waypoints
+        self.enable_segmentation = enable_segmentation
 
         # Vision Transformer backbone for each camera
         num_patches = (img_size // patch_size) ** 2
@@ -283,8 +333,20 @@ class MultiCameraBEVTransformer(nn.Module):
             ]
         )
 
+        # Add projection from d_model to bev_channels if needed
+        if d_model != bev_channels:
+            self.to_bev_channels = nn.Linear(d_model, bev_channels)
+        else:
+            self.to_bev_channels = nn.Identity()
+
         # BEV projection module
-        self.bev_projection = BEVProjection(d_model, bev_channels=bev_channels)
+        self.bev_projection = BEVProjection(
+            feature_dim=bev_channels,
+            bev_size=(200, 200),
+            bev_channels=bev_channels,
+            num_attention_heads=8,
+            dropout=0.1,
+        )
 
         # Temporal processing
         self.temporal_head = TemporalHead(bev_channels)
@@ -302,7 +364,6 @@ class MultiCameraBEVTransformer(nn.Module):
         self._init_weights()
 
         # Auxiliary BEV segmentation head (optional)
-        self.enable_segmentation = enable_segmentation
         if self.enable_segmentation:
             self.seg_head = BEVLightDecoder(bev_channels, num_classes=2)
 
@@ -336,6 +397,9 @@ class MultiCameraBEVTransformer(nn.Module):
         for layer in self.encoder_layers:
             x = layer(x)
 
+        # Output shape: [B, seq_len, d_model]
+        # Project to bev_channels if needed
+        x = self.to_bev_channels(x)
         return x
 
     def forward(
@@ -386,7 +450,7 @@ class MultiCameraBEVTransformer(nn.Module):
             camera_features = []
             for cam in range(num_cameras):
                 cam_feat = self.forward_camera(multi_camera_input[:, cam])
-                camera_features.append(cam_feat[:, 0])  # Use CLS token
+                camera_features.append(cam_feat[:, 1:])  # Exclude CLS token, use patch tokens
 
             # Project to BEV
             bev_features = self.bev_projection(camera_features, camera_poses)
@@ -401,11 +465,10 @@ class MultiCameraBEVTransformer(nn.Module):
 
         # Collect intermediate representations for XAI
         attention_weights = []
+        from .vision_transformer import MultiHeadAttention
         for layer in self.encoder_layers[-3:]:  # Last 3 layers
-            if hasattr(layer, "self_attention") and hasattr(
-                layer.self_attention, "attention_weights"
-            ):
-                if layer.self_attention.attention_weights is not None:
+            if hasattr(layer, "self_attention") and isinstance(layer.self_attention, MultiHeadAttention):
+                if getattr(layer.self_attention, "attention_weights", None) is not None:
                     attention_weights.append(layer.self_attention.attention_weights)
 
         intermediates = {
@@ -415,6 +478,6 @@ class MultiCameraBEVTransformer(nn.Module):
         }
 
         if self.enable_segmentation:
-            intermediates["seg_logits"] = seg_logits
+            intermediates["bev_occupancy"] = seg_logits
 
         return waypoints, intermediates

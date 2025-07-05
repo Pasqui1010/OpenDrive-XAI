@@ -1,5 +1,8 @@
 # Enhanced Implementation Roadmap: 2025 Research Integration
 
+> **⚠️ Python 3.12 Required:**
+> This project currently requires **Python 3.12** due to dependency compatibility (notably pydantic and CARLA). Python 3.13+ is not yet supported. Please ensure you are using Python 3.12 when setting up your environment.
+
 ## **Revolutionary Capabilities from Latest Research**
 
 ### 🚀 **MBRA Integration - 100x Data Scaling**
