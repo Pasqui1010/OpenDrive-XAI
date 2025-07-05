@@ -48,3 +48,6 @@ Thumbs.db
 
 # Virtual environments
 .venv/
+
+# Cursor IDE rules (local development only)
+.cursor/
